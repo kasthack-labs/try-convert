@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 
 using Microsoft.Build.Construction;
 using Microsoft.Build.Locator;
+
 using MSBuild.Conversion.Facts;
 
 namespace MSBuild.Abstractions
@@ -458,6 +459,7 @@ namespace MSBuild.Abstractions
 
             // If the user is running from a developer command prompt use the MSBuild of that VS
             var vsinstalldir = Environment.GetEnvironmentVariable("VSINSTALLDIR");
+            
             if (!string.IsNullOrEmpty(vsinstalldir))
             {
                 return Path.Combine(vsinstalldir, "MSBuild", "Current", "Bin");
@@ -465,12 +467,15 @@ namespace MSBuild.Abstractions
 
             //Attempt to set the version of MSBuild.
             var visualStudioInstances = MSBuildLocator.QueryVisualStudioInstances().ToArray();
-            var instance = visualStudioInstances.Length == 1
+            var instance = visualStudioInstances.Length switch
+            {
+                // No instances found
+                0 => null,
                 // If there is only one instance of MSBuild on this machine, set that as the one to use.
-                ? visualStudioInstances[0]
+                1 => visualStudioInstances[0],
                 // Handle selecting the version of MSBuild you want to use.
-                : SelectVisualStudioInstance(visualStudioInstances);
-
+                _ => SelectVisualStudioInstance(visualStudioInstances),
+            };
             return instance?.MSBuildPath;
         }
 
